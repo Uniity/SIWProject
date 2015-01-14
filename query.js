@@ -31,10 +31,26 @@ var stringQueryBand = "\
  * ONLOAD functions
  */
 
-function trigger() {
+$(document).ready(function() {
+	
+	$("#debug").hide();
+	$("#debugButton").on("click", function () {
+		$("#debug").toggle();
+	});
+	
+	$('#bandModal').on('show.bs.modal', function (event) {
+		var td = $(event.relatedTarget); // Button that triggered the modal
+		var name = td.text(); // Extract info from data-* attributes
+		// If necessary, you could initiate an AJAX request here (and then do the updating in a callback).
+		// Update the modal's content. We'll use jQuery here, but you could use a data binding library or other methods instead.
+		var modal = $(this);
+		modal.find('.modal-title').text('Band : ' + name);
+		modal.find('.modal-body').text("PLACE HOLDER");
+	});
+	
 	$("#genre").on("change", queryBands);
 	queryGenres();
-}
+});
 
 /*
  * QUERY functions, calling to query data on dbpedia
@@ -46,7 +62,7 @@ function sparqlCall(query, callbackFunction) {
 		url: query,
 		success: callbackFunction,
 		error: function (xhr, ajaxOptions, thrownError) {
-			debug("error : " + xhr.status + " // " + thrownError);
+			debug("error", xhr.status + " - " + thrownError);
 		}
 	});
 }
@@ -58,7 +74,8 @@ function queryGenres() {
  
  function queryBands() {
     var genre = $("#genre").val();
-    debug(genre);
+    debug("info", genre);
+	$('#result').html("<div class='alert alert-info' role='alert'>Please wait... Query about : "+genre+"</div>");
     var queryUrl = encodeURI(url + "?query=" + populateQuery(stringQueryBand, "genre", genre) + "&format=json");
 	sparqlCall(queryUrl, callbackBands);
 }
@@ -71,9 +88,10 @@ function callbackGenres(_data) {
 	var genres = [];
 	var genresDesc = [];
 	var displayMsg = "";
-	debug("Successful genre query");
+	debug("success", "Successful genre query");
 	var results = _data.results.bindings;
-	debug("Number result = " + results.length);
+	var num = results.length;
+	debug(num <= 0 ? "warning" : "info", "Number result = " + num);
 
 	for (var i in results) {
 		genres.push(results[i].name.value);
@@ -88,10 +106,10 @@ function callbackGenres(_data) {
 function callbackBands(_data) {
 	var bandsWiki = [];
 	var bands = [];
-	debug("Callback");
+	debug("success", "Successful bands query");
 	var results = _data.results.bindings;
-	debug("Number result = " + results.length);
 	var num = results.length;
+	debug(num <= 0 ? "warning" : "info", "Number result = " + num);
 
 	for (var i in results) {
 		bands.push(results[i].name.value);
@@ -116,8 +134,8 @@ function populateQuery(query, name, value) {
  * DISPLAY functions
  */
 
-function debug(msg) {
-    $('#debug').append("<br /> - " + msg);
+function debug(level, msg) {
+    $('#debugTable').append("<tr class='"+level+"'><td>" + new Date()+"</td><td>" + level+"</td><td>" + msg+"</td></tr>");
 }
 
 function setGenreOptions(array, urlArray) {
@@ -129,9 +147,10 @@ function setGenreOptions(array, urlArray) {
 
 function setBandTable(genreName, num, bands, bandsWiki) {
 	var displayMsg = "";
-	displayMsg = "<h2>" + genreName + "'s bands (" + num + " results) :</h2><table style='width:100%'>";
+	displayMsg = "<h3>" + genreName + "'s bands (" + num + " results) :</h3><table class='table table-bordered table-hover'>"+
+		"<tr><th>Band's name</th><th>Link to the wiki page</th></tr>";
 	for (var i in bands) {
-		displayMsg += "<tr><td>" + bands[i] + "</td><td><a href='" + bandsWiki[bands[i]] + "'>Wiki</a></td></tr>";
+		displayMsg += "<tr><td data-toggle='modal' data-target='#bandModal'>" + bands[i] + "</td><td><a href='" + bandsWiki[bands[i]] + "'>Wiki</a></td></tr>";
 	}
 	displayMsg += "</table>";
 
