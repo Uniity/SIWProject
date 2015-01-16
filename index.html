@@ -4,30 +4,35 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>SIW Project</title>
+	<title>GenreSearcher</title>
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/stylesheet.css" rel="stylesheet">
 	<!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
 </head>
 <body>
-	
-	<div class="container">
-		<h1>Research music band by genres !</h1>
+	<div class="container clearfix">
+		<div class="pull-right">
+			<button class="scrollToTop btn btn-primary">
+				Back to top <span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
+			</button>
+		</div>
+		<div class="page-header">
+		<h1>GenreSearcher <small>Research music bands or artists by genres !</small></h1>
+		</div>
 		<label for="genre">Try it out :</label>
 		<select name="genre" id="genre" class="form-control" disabled>
 			<option>Please wait...</option>
 		</select>
 		<div id="result"></div>
 		<br />
-		<button class="btn btn-default btn-xs" id="modalTest">Show modal</button>
 		<button class="btn btn-default btn-xs" id="debugButton">Toggle debug logs</button>
 		<div id="debug">
 			<table id="debugTable" class='table table-bordered table-hover'>
 				<tr>
 					<th>Timestamp</th>
-					<th>Level</th>
 					<th>Message</th>
 				</tr>
 			</table>
@@ -35,18 +40,18 @@
 	</div>
 	
 	<div class="modal fade" id="bandModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-		<div class="modal-dialog">
-		<div class="modal-content">
-			<div class="modal-header">
-				<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-				<h4 class="modal-title" id="exampleModalLabel">Band name</h4>
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+					<h4 class="modal-title" id="exampleModalLabel">Band name</h4>
+				</div>
+				<div class="modal-body">
+					
+				</div>
 			</div>
-			<div class="modal-body">
-				
-			</div>
 		</div>
-		</div>
-		</div>
+	</div>
 	
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
     <script src="js/bootstrap.min.js"></script>

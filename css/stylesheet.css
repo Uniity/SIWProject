@@ -1,0 +1,8 @@
+.clickableBand {
+	cursor:pointer;
+}
+
+.scrollToTop{
+	position:fixed;
+	display:none;
+}
