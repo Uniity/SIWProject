@@ -1,20 +1,23 @@
 /*
  * GLOBAL variables
  */
+ 
+//config variables
+var debug = true;
+var logging = true;
 
 var url = "http://dbpedia.org/sparql";
 
+//This query return all musical genre's name and dbpedia link 
 var stringQueryGenre = "\
     PREFIX dbpprop: <http://dbpedia.org/property/>\
-    PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>\
-    PREFIX foaf: <http://xmlns.com/foaf/0.1/>\
     SELECT DISTINCT ?name ?sub\
     WHERE {\
-        ?sub dbpprop:name ?name .\
-        ?sub dbpedia-owl:instrument ?instru .\
-        ?sub a <http://dbpedia.org/ontology/MusicGenre>\
+        ?sub a <http://dbpedia.org/ontology/MusicGenre> .\
+        ?sub dbpprop:name ?name\
     }";
 
+//This query return all musical bands/artists' name, wikipage link, description and dbpedia link related to thec chosen genre 
 var stringQueryBand = "\
     PREFIX dbpprop: <http://dbpedia.org/property/>\
     PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>\
@@ -29,6 +32,7 @@ var stringQueryBand = "\
 		FILTER (lang(?desc) = 'en')\
     }";
 
+//This query return all title's name, release date and album's name related to the chosen band/artist
 var stringQueryTitle = "\
 	PREFIX dbpprop: <http://dbpedia.org/property/>\
     PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>\
@@ -41,8 +45,10 @@ var stringQueryTitle = "\
         ?title dbpedia-owl:album ?album .\
         ?album dbpprop:name ?albumname\
     }";
-	
+
+//Keep current bands/artists name for reference after titles query
 var clickedBandName;
+//Data variable, keeping current bands/artists info in case of display
 var currentBandInfo;
 
 /*
@@ -51,12 +57,14 @@ var currentBandInfo;
 
 $(document).ready(function() {
 	
-	//Concern Debug log
-	$("#debug").hide();
-	$("#debugButton").on("click", function () {
-		$("#debug").toggle();
+	//Concern Log log
+	$("#log").hide();
+	$("#logButton").on("click", function () {
+		$("#log").toggle();
 	});
 	
+	//"Scroll to Top" button script part
+	//credit : http://www.paulund.co.uk/how-to-create-an-animated-scroll-to-top-with-jquery
 	$(window).scroll(function(){
 		if ($(this).scrollTop() > 100) {
 			$('.scrollToTop').fadeIn();
@@ -64,14 +72,15 @@ $(document).ready(function() {
 			$('.scrollToTop').fadeOut();
 		}
 	});
-	
 	$('.scrollToTop').click(function(){
 		$('html, body').animate({scrollTop : 0},800);
 		return false;
 	});
 	
 	$("#genre").on("change", queryBands);
-	queryGenres();//Requesting DBpedia for all musical genres to enable the search by genre
+	
+	//Requesting DBpedia for all musical genres to enable the search by genre
+	queryGenres();
 });
 
 /*
@@ -81,13 +90,13 @@ $(document).ready(function() {
  
 //Simple ajax call to the url global var, sending the query param and specifying the successful return function
 function sparqlCall(query, callbackFunction) {
-	debug("info", "Ajax call for sparql query");
+	log("info", "Ajax call for sparql query");
 	$.ajax({
 		dataType: "json",
 		url: query,
 		success: callbackFunction,
 		error: function (xhr, ajaxOptions, thrownError) {
-			debug("error", xhr.status + " - " + thrownError);
+			log("error", xhr.status + " - " + thrownError);
 		}
 	});
 }
@@ -101,18 +110,26 @@ function queryGenres() {
  
  function queryBands() {
     var genre = $("#genre").val();
-    debug("info", "Requesting queryBand for "+genre);
-	$('#result').html("<div class='alert alert-info' role='alert'>Please wait... Query about : "+genre+"</div>");
-    var queryUrl = encodeURI(url + "?query=" + populateQuery(stringQueryBand, "genre", genre) + "&format=json");
-	sparqlCall(queryUrl, callbackBands);
+	if (genre) {
+		log("info", "Requesting queryBands for "+genre);
+		$('#result').html("<div class='ale rt alert-info' role='alert'>Please wait... Query about : "+genre+"</div>");
+		var queryUrl = encodeURI(url + "?query=" + populateQuery(stringQueryBand, "genre", genre) + "&format=json");
+		sparqlCall(queryUrl, callbackBands);
+	} else {
+		$('#result').html("");
+	}
 }
  
  function queryTitles() {
 	clickedBandName = $(this).text();
     var band = currentBandInfo[clickedBandName].dbpediaLink;
-    debug("info", band + " - " + clickedBandName);
-    var queryUrl = encodeURI(url + "?query=" + populateQuery(stringQueryTitle, "band", band) + "&format=json");
-	sparqlCall(queryUrl, callbackBandInfo);
+	if (band) {
+		log("info", "Requesting related titles for " + band);
+		var queryUrl = encodeURI(url + "?query=" + populateQuery(stringQueryTitle, "band", band) + "&format=json");
+		sparqlCall(queryUrl, callbackBandInfo);
+	} else {
+		log("error", "Error on selected band : "+clickedBandName);
+	}
 }
 
 /*
@@ -123,10 +140,10 @@ function callbackGenres(data) {
 	var genres = [];
 	var genresDesc = [];
 	var displayMsg = "";
-	debug("success", "Successful genre query");
+	log("success", "Successful genre query");
 	var results = data.results.bindings;
 	var num = results.length;
-	debug(num <= 0 ? "warning" : "info", "Number result = " + num);
+	log(num <= 0 ? "warning" : "info", "Number result = " + num);
 
 	for (var i in results) {
 		genres.push(results[i].name.value);
@@ -142,10 +159,10 @@ function callbackBands(data) {
 	var bandsInfo = [];
 	var bands = [];
 	currentBandInfo = [];
-	debug("success", "Successful bands query");
+	log("success", "Successful bands query");
 	var results = data.results.bindings;
 	var num = results.length;
-	debug(num <= 0 ? "warning" : "info", "Number result = " + num);
+	log(num <= 0 ? "warning" : "info", "Number result = " + num);
 
 	for (var i in results) {
 		bands.push(results[i].name.value);
@@ -160,10 +177,10 @@ function callbackBands(data) {
 
 function callbackBandInfo(data) {
 	var titles = [];
-	debug("success", "Successful titles query");
+	log("success", "Successful titles query");
 	var results = data.results.bindings;
 	var num = results.length;
-	debug(num <= 0 ? "warning" : "info", "Number result = " + num);
+	log(num <= 0 ? "warning" : "info", "Number result = " + num);
 
 	for (var i in results) {
 		titles.push({title : results[i].name.value, album : results[i].albumname.value, date : results[i].date.value});
@@ -176,25 +193,50 @@ function callbackBandInfo(data) {
  * DISPLAY functions
  */
 
-function debug(level, msg) {
-    $('#debugTable').append("<tr class='"+level+"'><td>" + new Date().toLocaleString() +"</td><td><span class='label label-"+level+"'>"+level.capitalize()+"</span> - " + msg+"</td></tr>");
+function log(level, msg) {
+	if ((logging && debug) || (logging && level!="debug"))
+		$('#logTable').append(
+			"<tr class='"+level+"'>"+
+				"<td>" + new Date().toLocaleTimeString() +"</td>"+
+				"<td><span class='label label-"+level+"'>"+level.capitalize()+"</span> - " + msg+"</td>"+
+			"</tr>"
+		);
 }
 
 function setGenreOptions(array, urlArray) {
-    var option = "";
+    var options = "<option />";
     for (var i in array)
-    option += "<option value=\"" + urlArray[array[i]] + "\">" + array[i] + "</option>";
-    $('#genre').html(option);
+		options += "<option value=\"" + urlArray[array[i]] + "\">" + array[i] + "</option>";
+    $('#genre').html(options);
 }
 
 function setBandTable(genreName, bands, bandsWiki) {
-	var displayMsg = "";
-	displayMsg = "<h3>" + genreName + " bands/artists : <span class='badge'>" + bands.length + "</span></h3><table class='table table-bordered table-hover'>"+
-		"<tr><th>Band's name</th><th>Link to the wiki page</th></tr>";
-	for (var i in bands) {
-		displayMsg += "<tr><td class='clickableBand'>" + bands[i] + "</td><td><a href='" + bandsWiki[bands[i]].wiki + "'>Wiki</a></td></tr>";
+	var displayMsg = 
+			"<h3>" + genreName + " bands/artists : </h3>"+
+			"<p><span class='badge'>" + bands.length + "</span> results</p>";
+	if (bands.length > 0) {
+		displayMsg += 
+			"<p><small>"+
+				"<span class='label label-info'>Tips</span> "+
+				"Click on band/artist name to show some informations about it"+
+			"</small></p>"+
+			"<table class='table table-bordered table-hover'>"+
+				"<tr>"+
+					"<th>Band's name</th>"+
+					"<th>Link to the wiki page</th>"+
+				"</tr>";
+		for (var i in bands) {
+			displayMsg += 
+				"<tr>"+
+					"<td class='clickableBand'>" + bands[i] + "</td>"+
+					"<td><a href='" + bandsWiki[bands[i]] + "' target='_blank'>Wiki</a></td>"+
+				"</tr>";
+		}
+		displayMsg += 
+			"</table>";
+	} else {
+		displayMsg += "<p>There's no results for this genre.</p>";
 	}
-	displayMsg += "</table>";
 
     $('#result').html(displayMsg);
 	
@@ -207,7 +249,7 @@ function setBandModal(name, musics, desc) {
 		body += "<table class='table table-bordered table-hover'>"+
 			"<tr><th>Title's name</th><th>Title's album</th><th>Title release date</th></tr>";
 		for (var i in musics) {
-			body += "<tr><td>"+musics[i].title+"</td><td>"+musics[i].album+"</td><td>"+musics[i].date+"</td></tr>";
+			body += "<tr><td>"+musics[i].title+"</td><td>"+musics[i].album+"</td><td>"+new Date(musics[i].date.split("+")[0]).toLocaleDateString()+"</td></tr>";
 		}
 		body += "</table>";
 	}
@@ -228,6 +270,7 @@ function populateQuery(query, name, value) {
 	return query.replace(regex, value);
 }
 
+//credit : http://stackoverflow.com/a/3291856
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
 }
