@@ -8,27 +8,29 @@ var logging = true;
 
 var url = "http://dbpedia.org/sparql";
 
-//This query return all musical genre's name and dbpedia link 
+//This query return all musical genre's name and dbpedia link. Last line ensure that each returned genre has at least 1 artist/band
 var stringQueryGenre = "\
     PREFIX dbpprop: <http://dbpedia.org/property/>\
     SELECT DISTINCT ?name ?sub\
     WHERE {\
         ?sub a <http://dbpedia.org/ontology/MusicGenre> .\
-        ?sub dbpprop:name ?name\
+        ?sub dbpprop:name ?name .\
+		?art dbpedia-owl:genre ?sub\
     }";
 
-//This query return all musical bands/artists' name, wikipage link, description and dbpedia link related to thec chosen genre 
+//This query return all musical bands/artists' name, wikipage link, description, image and dbpedia link related to thec chosen genre 
 var stringQueryBand = "\
     PREFIX dbpprop: <http://dbpedia.org/property/>\
     PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>\
     PREFIX foaf: <http://xmlns.com/foaf/0.1/>\
-    SELECT ?name ?page ?desc ?sub\
+    SELECT ?name ?page ?desc ?sub ?img\
     WHERE {\
         ?sub dbpprop:name ?name .\
         ?sub foaf:isPrimaryTopicOf ?page .\
         ?sub dbpedia-owl:abstract ?desc .\
         ?sub dbpedia-owl:genre <@genre> .\
         ?sub a <http://dbpedia.org/ontology/Band> .\
+		OPTIONAL { ?sub dbpedia-owl:thumbnail ?img } .\
 		FILTER (lang(?desc) = 'en')\
     }";
 
@@ -79,7 +81,7 @@ $(document).ready(function() {
 		return false;
 	});
 	
-	$("#genre").on("change", queryBands);
+	$("#submitButton").on("click", queryBands);
 	
 	//Requesting dbpedia for all musical genres to enable the search by genre
 	queryGenres();
@@ -94,7 +96,7 @@ $(document).ready(function() {
  
 //Simple ajax call to the url global var, sending the query param and specifying the successful return function
 function sparqlCall(query, callbackFunction) {
-	log("info", "Ajax call for sparql query");
+	log("debug", "Ajax call for sparql query");
 	$.ajax({
 		dataType: "json",
 		url: query,
@@ -114,11 +116,16 @@ function queryGenres() {
 }
  
  function queryBands() {
+ 
 	log("debug", "queryBands start - call for requesting all related music bands/artists");
     var genre = $("#genre").val();
 	if (genre) {
 		log("info", "Requesting queryBands for "+genre);
-		$('#result').html("<div class='ale rt alert-info' role='alert'>Please wait... Query about : "+genre+"</div>");
+		
+		$('#result').addClass("hidden");
+		$('#waiting').html("Please wait... Query about : "+genre);
+		$('#waiting').removeClass("hidden");
+		
 		var queryUrl = encodeURI(url + "?query=" + populateQuery(stringQueryBand, "genre", genre) + "&format=json");
 		sparqlCall(queryUrl, callbackBands);
 	} else {
@@ -170,7 +177,6 @@ function callbackGenres(data) {
 
 function callbackBands(data) {
 	log("debug", "callbackBands start - format band data");
-	var bandsInfo = [];
 	var bands = [];
 	currentBandInfo = [];
 	log("success", "Successful bands query");
@@ -180,14 +186,13 @@ function callbackBands(data) {
 
 	for (var i in results) {
 		bands.push(results[i].name.value);
-		bandsInfo[results[i].name.value] = results[i].page.value;
 		//currentBandInfos serve to keep artist/band infos so there is no need to request each time for single display
-		currentBandInfo[results[i].name.value] = {wiki : results[i].page.value, desc : results[i].desc.value, dbpediaLink : results[i].sub.value};
+		currentBandInfo[results[i].name.value] = {wiki : results[i].page.value, desc : results[i].desc.value, dbpediaLink : results[i].sub.value, image : (results[i].img ? results[i].img.value : undefined)};
 	}
 	bands.sort();
 
 	var genreName = $('#genre option:selected').text();
-	setBandTable(genreName, bands, bandsInfo);
+	setBandTable(genreName, bands);
 }
 
 function callbackBandInfo(data) {
@@ -200,9 +205,10 @@ function callbackBandInfo(data) {
 
 	for (var i in results) {
 		titles.push({title : results[i].name.value, album : results[i].albumname.value, date : results[i].date.value});
+		
 	}
 	
-	setBandModal(clickedBandName, titles, currentBandInfo[clickedBandName].desc);
+	setBandModal(clickedBandName, titles);
 }
 
 /*
@@ -229,63 +235,86 @@ function setGenreOptions(array, urlArray) {
     $('#genre').html(options);
 }
 
-function setBandTable(genreName, bands, bandsWiki) {
-	var displayMsg = 
-			"<h3>" + genreName + " bands/artists : </h3>"+
-			"<p><span class='badge'>" + bands.length + "</span> results</p>";
+function setBandTable(genreName, bands) {
+	var displayTable = "";
 	if (bands.length > 0) {
-		displayMsg += 
-			"<p>"+
-				"<span class='label label-info'>Tips</span> "+
-				"Click on band/artist name to show some informations about it"+
-			"</p>"+
-			"<table class='table table-bordered table-hover'>"+
+		displayTable += 
 				"<tr>"+
 					"<th>Band's name</th>"+
-					"<th>Link to the wiki page</th>"+
 				"</tr>";
 		for (var i in bands) {
-			displayMsg += 
+			displayTable += 
 				"<tr>"+
 					"<td class='clickableBand'>" + bands[i] + "</td>"+
-					"<td><a href='" + bandsWiki[bands[i]] + "' target='_blank'>Wiki</a></td>"+
 				"</tr>";
 		}
-		displayMsg += 
-			"</table>";
+		$(".resultOk").removeClass("hidden");
 	} else {
-		displayMsg += "<p>There's no results for this genre.</p>";
+		displayTable += "<tr><td>There's no results for this genre.</td></tr>";
+		$(".resultOk").addClass("hidden");
 	}
-
-    $('#result').html(displayMsg);
+	
+	
+	$("#genreName").text(genreName);
+	$("#bandNumber").text(bands.length);
+    $("#result").find("table").html(displayTable);
 	
 	$(".clickableBand").on("click", queryTitles);
+	
+	$("#waiting").addClass("hidden");
+    $("#result").removeClass("hidden");
 }
 
-function setBandModal(name, musics, desc) {
-	var body = "<p>"+desc+"</p>";
+function setBandModal(name, musics) {
+
+	var image = currentBandInfo[name].image;
+	var imageDisplay;
+	if (image) {
+		imageDisplay = "<img src='"+image+"' alt='A image of the artist/band "+name+"' class='thumbnail'>";
+	} else {
+		imageDisplay = "";
+	}
+	
+	var wiki = currentBandInfo[name].wiki;
+	var wikiDisplay = "<a href='"+wiki+"' target='_blank'>"+name+"'s page</a>";
+	
+	var desc = currentBandInfo[name].desc;
+	var descDisplay = "<p>"+desc+"</p>";
+	
+	var titleDisplay = "";
 	if (musics.length > 0) {
-		body += "<table class='table table-bordered table-hover'>"+
+		titleDisplay += "<table class='table table-bordered table-hover'>"+
 			"<tr>"+
 				"<th>Title's name</th>"+
 				"<th>Title's album</th>"+
 				"<th>Title release date</th>"+
 			"</tr>";
 		for (var i in musics) {
-			body += 
+			titleDisplay += 
 			"<tr>"+
 				"<td>"+musics[i].title+"</td>"+
 				"<td>"+musics[i].album+"</td>"+
 				"<td>"+new Date(musics[i].date.split("+")[0]).toLocaleDateString()+"</td>"+
 			"</tr>";
 		}
-		body += "</table>";
+		titleDisplay += "</table>";
+	} else {
+		titleDisplay += "<p>There is not title referenced for this artist</p>"
 	}
 	
 	var modal = $("#bandModal");
 	
 	modal.find(".modal-title").text("Band : " + name);
-	modal.find(".modal-body").html(body);
+	
+	modal.find("#imageModal").html(imageDisplay);
+	if (imageDisplay == "")
+		modal.find("#imageModal").parent().addClass("hidden");
+	else 
+		modal.find("#imageModal").parent().removeClass("hidden");
+	
+	modal.find("#wikiModal").html(wikiDisplay);
+	modal.find("#descModal").html(descDisplay);
+	modal.find("#titleModal").html(titleDisplay);
 	modal.modal("show");
 }
 

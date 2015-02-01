@@ -10,3 +10,12 @@
 .hidden {
     display: none;
 }
+
+body {
+	padding-top: 70px; 
+}
+
+.artist-image {
+    margin-top: 10px;
+    margin-left: 10px;
+}

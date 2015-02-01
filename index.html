@@ -14,6 +14,18 @@
 </head>
 <body>
 	<div class="container clearfix">
+		<nav class="navbar navbar-default navbar-left navbar-fixed-top">
+			<div class="container">
+				<form class="navbar-form navbar-left">
+					<div class="form-group">
+						<select name="genre" id="genre" class="form-control" disabled>
+							<option>Please wait...</option>
+						</select>
+					</div>
+					<a id="submitButton" class="btn btn-default">Reshearch</a>
+				</form>
+			</div>
+		</nav>
 		<div class="pull-right">
 			<button class="scrollToTop btn btn-primary">
 				Back to top <span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>
@@ -22,13 +34,21 @@
 		<div class="page-header">
 		<h1>GenRe<font color="#77AAFF">searcher</font> <small>Research music bands or artists by genres !</small></h1>
 		</div>
-		<label for="genre">Try it out :</label>
-		<p class="help-block">Select a genre to display related bands/artists</p>
-		<select name="genre" id="genre" class="form-control" disabled>
-			<option>Please wait...</option>
-		</select>
-		<div id="result"></div>
+		<label for="genre">Try it out !</label>
+		<p class="help-block">Use the navigation bar at the top of the page to shearch music artists/bands</p>
+		
+		<div id="waiting" class='alert alert-info hidden' role='alert'></div>
+		<div id="result" class="hidden">
+			<h3><span id="genreName"></span> bands/artists : </h3>
+			<p><span class='badge' id="bandNumber"></span> results</p>
+			<p class="resultOk hidden">
+				<span class='label label-info'>Tips</span> Click on band/artist name to show some informations about it
+			</p>
+			<table class='table table-bordered table-hover resultOk hidden'></table>
+		</div>
+		
 		<br />
+		
 		<button class="btn btn-default btn-xs hidden" id="logButton">Toggle logs table</button>
 		<div id="log" class="hidden">
 			<table id="logTable" class='table table-bordered table-hover'>
@@ -40,6 +60,7 @@
 		</div>
 	</div>
 	
+	<!-- Modal used to display artist/band info-->
 	<div class="modal fade" id="bandModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
 		<div class="modal-dialog modal-lg">
 			<div class="modal-content">
@@ -49,6 +70,18 @@
 				</div>
 				<div class="modal-body">
 					
+					<div class="pull-right artist-image">
+						<div id="imageModal"></div>
+					</div>
+					
+					<h4>Description</h4>
+					<div id="descModal"></div>
+					
+					<h4>Link to the Wikipedia page</h4>
+					<div id="wikiModal"></div>
+					
+					<h4>Titles</h4>
+					<div id="titleModal"></div>
 				</div>
 			</div>
 		</div>
