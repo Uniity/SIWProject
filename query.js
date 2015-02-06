@@ -4,7 +4,7 @@
  
 //config variables
 var debug = false;
-var logging = true;
+var logging = false;
 
 var url = "http://dbpedia.org/sparql";
 
